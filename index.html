@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login & Signup</title>
+  <title>Authentication System</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f4f4f4;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #f4f4f4;
     }
 
     .container {
       background: white;
       padding: 30px;
+      width: 330px;
       border-radius: 10px;
-      width: 300px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
@@ -33,6 +33,7 @@
     button {
       width: 100%;
       padding: 10px;
+      margin-top: 8px;
       background: #007bff;
       color: white;
       border: none;
@@ -42,11 +43,12 @@
 
     button:hover { background: #0056b3; }
 
-    .toggle {
+    .link {
       text-align: center;
       margin-top: 10px;
       cursor: pointer;
       color: blue;
+      font-size: 14px;
     }
 
     .message {
@@ -64,124 +66,195 @@
 <body>
 
 <div class="container">
-  <h2 id="form-title">Login</h2>
 
-  <!-- Signup Fields -->
-  <input type="text" id="name" placeholder="Enter Name" class="hidden">
-  <input type="text" id="surname" placeholder="Enter Surname" class="hidden">
+  <h2 id="title">Login</h2>
 
-  <input type="email" id="email" placeholder="Enter Email">
-  <input type="password" id="password" placeholder="Enter Password">
-  <input type="text" id="phone" placeholder="Enter Phone" class="hidden">
+  <!-- Signup fields -->
+  <input type="text" id="name" placeholder="Name" class="hidden">
+  <input type="text" id="surname" placeholder="Surname" class="hidden">
+  <input type="text" id="phone" placeholder="Phone" class="hidden">
 
-  <button id="submit-btn">Login</button>
+  <!-- Common fields -->
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
 
-  <div class="toggle" id="toggle-form">
-    Don't have an account? Sign Up
-  </div>
+  <!-- Reset fields -->
+  <input type="text" id="otp" placeholder="Enter OTP" class="hidden">
+  <input type="password" id="newPassword" placeholder="New Password" class="hidden">
+
+  <button id="mainBtn">Login</button>
+
+  <div class="link" id="toggleAuth">Don't have an account? Sign Up</div>
+  <div class="link" id="forgotLink">Forgot Password?</div>
+  <div class="link hidden" id="backToLogin">Back to Login</div>
 
   <div class="message" id="message"></div>
 </div>
 
 <script>
-  const formTitle = document.getElementById("form-title");
-  const submitBtn = document.getElementById("submit-btn");
-  const toggleForm = document.getElementById("toggle-form");
+  const title = document.getElementById("title");
+  const mainBtn = document.getElementById("mainBtn");
+  const toggleAuth = document.getElementById("toggleAuth");
+  const forgotLink = document.getElementById("forgotLink");
+  const backToLogin = document.getElementById("backToLogin");
   const message = document.getElementById("message");
 
   const nameField = document.getElementById("name");
   const surnameField = document.getElementById("surname");
+  const phoneField = document.getElementById("phone");
   const emailField = document.getElementById("email");
   const passwordField = document.getElementById("password");
-  const phoneField = document.getElementById("phone");
+  const otpField = document.getElementById("otp");
+  const newPasswordField = document.getElementById("newPassword");
 
-  let isLogin = true;
+  let mode = "login"; // login | signup | forgot | reset
 
-  // Toggle Form
-  toggleForm.addEventListener("click", () => {
-    isLogin = !isLogin;
+  function resetUI() {
+    nameField.classList.add("hidden");
+    surnameField.classList.add("hidden");
+    phoneField.classList.add("hidden");
+    otpField.classList.add("hidden");
+    newPasswordField.classList.add("hidden");
+    passwordField.classList.remove("hidden");
+    toggleAuth.classList.remove("hidden");
+    forgotLink.classList.remove("hidden");
+    backToLogin.classList.add("hidden");
     message.innerText = "";
+  }
 
-    if (isLogin) {
-      formTitle.innerText = "Login";
-      submitBtn.innerText = "Login";
-      toggleForm.innerText = "Don't have an account? Sign Up";
-
-      nameField.classList.add("hidden");
-      surnameField.classList.add("hidden");
-      phoneField.classList.add("hidden");
-
-    } else {
-      formTitle.innerText = "Sign Up";
-      submitBtn.innerText = "Sign Up";
-      toggleForm.innerText = "Already have an account? Login";
-
+  toggleAuth.onclick = () => {
+    resetUI();
+    if (mode === "login") {
+      mode = "signup";
+      title.innerText = "Sign Up";
+      mainBtn.innerText = "Sign Up";
+      toggleAuth.innerText = "Already have an account? Login";
       nameField.classList.remove("hidden");
       surnameField.classList.remove("hidden");
       phoneField.classList.remove("hidden");
+    } else {
+      mode = "login";
+      title.innerText = "Login";
+      mainBtn.innerText = "Login";
+      toggleAuth.innerText = "Don't have an account? Sign Up";
     }
+  };
 
-    clearFields();
-  });
+  forgotLink.onclick = () => {
+    resetUI();
+    mode = "forgot";
+    title.innerText = "Forgot Password";
+    mainBtn.innerText = "Send OTP";
+    toggleAuth.classList.add("hidden");
+    forgotLink.classList.add("hidden");
+    backToLogin.classList.remove("hidden");
+  };
 
-  submitBtn.addEventListener("click", () => {
-    const name = nameField.value.trim();
-    const surname = surnameField.value.trim();
+  backToLogin.onclick = () => location.reload();
+
+  mainBtn.onclick = async () => {
     const email = emailField.value.trim();
     const password = passwordField.value.trim();
+    const name = nameField.value.trim();
+    const surname = surnameField.value.trim();
     const phone = phoneField.value.trim();
+    const otp = otpField.value.trim();
+    const newPassword = newPasswordField.value.trim();
 
-    let users = JSON.parse(localStorage.getItem("users")) || [];
+    try {
+      let response, data;
 
-    if (isLogin) {
-      // LOGIN → Only Email & Password required
-      if (!email || !password) {
-        showMessage("Please enter Email and Password", "error");
+      if (mode === "login") {
+        response = await fetch("/login", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ email, password })
+        });
+
+        data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem("token", data.token);
+          message.className = "message success";
+          message.innerText = data.message;
+        } else {
+          message.className = "message error";
+          message.innerText = data.error;
+
+          if (data.action === "forgot-password") {
+            forgotLink.click();
+          }
+        }
         return;
       }
 
-      const user = users.find(u => u.email === email && u.password === password);
+      if (mode === "signup") {
+        response = await fetch("/signup", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            name,
+            surname,
+            email,
+            password,
+            phone_number: phone
+          })
+        });
 
-      if (user) {
-        showMessage("Login Successful!", "success");
-      } else {
-        showMessage("Invalid Email or Password", "error");
-      }
-
-    } else {
-      // SIGNUP → All fields required
-      if (!name || !surname ||  !email || !password || !phone) {
-        showMessage("Please fill all fields", "error");
+        data = await response.json();
+        message.className = response.ok ? "message success" : "message error";
+        message.innerText = data.message || data.error;
         return;
       }
 
-      const userExists = users.some(u => u.email === email);
+      if (mode === "forgot") {
+        response = await fetch("/forgot-password", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ email })
+        });
 
-      if (userExists) {
-        showMessage("User already exists", "error");
-      } else {
-        users.push({ name, surname, email, password, phone });
-        localStorage.setItem("users", JSON.stringify(users));
-        showMessage("Signup Successful! You can login now.", "success");
+        data = await response.json();
+        message.className = response.ok ? "message success" : "message error";
+        message.innerText = data.message || data.error;
+
+        if (response.ok) {
+          mode = "reset";
+          title.innerText = "Reset Password";
+          mainBtn.innerText = "Reset Password";
+          otpField.classList.remove("hidden");
+          newPasswordField.classList.remove("hidden");
+          passwordField.classList.add("hidden");
+        }
+        return;
       }
+
+      if (mode === "reset") {
+        response = await fetch("/reset-password", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            email,
+            otp,
+            new_password: newPassword
+          })
+        });
+
+        data = await response.json();
+        message.className = response.ok ? "message success" : "message error";
+        message.innerText = data.message || data.error;
+        return;
+      }
+
+    } catch (err) {
+      message.className = "message error";
+      message.innerText = "Server error";
     }
-  });
-
-  function showMessage(text, type) {
-    message.innerText = text;
-    message.className = "message " + type;
-  }
-
-  function clearFields() {
-    nameField.value = "";
-    surnameField.value = "";
-    emailField.value = "";
-    passwordField.value = "";
-    phoneField.value = "";
-  }
+  };
 </script>
 
 </body>
 </html>
+
 
 
