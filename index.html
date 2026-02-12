@@ -69,11 +69,10 @@
   <!-- Signup Fields -->
   <input type="text" id="name" placeholder="Enter Name" class="hidden">
   <input type="text" id="surname" placeholder="Enter Surname" class="hidden">
-  <input type="tel" id="phone" placeholder="Enter Phone Number" class="hidden">
 
-  <!-- Common Fields -->
   <input type="email" id="email" placeholder="Enter Email">
   <input type="password" id="password" placeholder="Enter Password">
+  <input type="text" id="phone" placeholder="Enter Phone" class="hidden">
 
   <button id="submit-btn">Login</button>
 
@@ -92,9 +91,9 @@
 
   const nameField = document.getElementById("name");
   const surnameField = document.getElementById("surname");
-  const phoneField = document.getElementById("phone");
   const emailField = document.getElementById("email");
   const passwordField = document.getElementById("password");
+  const phoneField = document.getElementById("phone");
 
   let isLogin = true;
 
@@ -128,9 +127,9 @@
   submitBtn.addEventListener("click", () => {
     const name = nameField.value.trim();
     const surname = surnameField.value.trim();
-    const phone = phoneField.value.trim();
     const email = emailField.value.trim();
     const password = passwordField.value.trim();
+    const phone = phoneField.value.trim();
 
     let users = JSON.parse(localStorage.getItem("users")) || [];
 
@@ -151,7 +150,7 @@
 
     } else {
       // SIGNUP → All fields required
-      if (!name || !surname || !phone || !email || !password) {
+      if (!name || !surname ||  !email || !password || !phone) {
         showMessage("Please fill all fields", "error");
         return;
       }
@@ -161,7 +160,7 @@
       if (userExists) {
         showMessage("User already exists", "error");
       } else {
-        users.push({ name, surname, phone, email, password });
+        users.push({ name, surname, email, password, phone });
         localStorage.setItem("users", JSON.stringify(users));
         showMessage("Signup Successful! You can login now.", "success");
       }
@@ -176,9 +175,9 @@
   function clearFields() {
     nameField.value = "";
     surnameField.value = "";
-    phoneField.value = "";
     emailField.value = "";
     passwordField.value = "";
+    phoneField.value = "";
   }
 </script>
 
